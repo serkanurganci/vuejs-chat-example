@@ -1,6 +1,6 @@
 <template>
 <div class="view login">
-  <form class="login-form">
+  <form class="login-form" @submit.prevent="Login" v-if="state.username === '' || state.username === null">
     <h1>Login to Firechat</h1>
    <div class="form-inner">
      <label for="usernme">Username</label>
@@ -9,7 +9,7 @@
    </div>
   </form>
 </div>
-  <div class="view chat">
+  <div class="view chat" v-else>
     <h1>Chat View</h1>
   </div>
 </template>
@@ -20,14 +20,24 @@ import {reactive, onMounted, ref} from 'vue';
 export default {
   setup() {
     const inputUserName = ref("")
+
+    const state = reactive({
+      username:'',
+      message:[]
+    })
+
     const Login = () => {
       if(inputUserName.value != "" || inputUserName.value != null){
-
+        state.username = inputUserName.value
+        inputUserName.value = ''
       }
+      console.log(state)
     }
 
    return {
-
+     inputUserName,
+     Login,
+     state
   }
  },
 }
@@ -50,34 +60,17 @@ export default {
           @apply mb-1 text-black text-base duration-300;
         }
         input[type="text"] {
-          color: #333;
-          font-size: 18px;
-          box-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
-          background-color: #F3F3F3;
-          transition: 0.4s;
           @apply appearance-none border-0 outline-none bg-none w-full py-3 px-4 rounded-xl mb-4;
           &::placeholder {
-            color: #888;
-            transition: 0.4s;
+            @apply text-gray-500 duration-500;
           }
         }
         input[type="submit"] {
-          appearance: none;
-          border: none;
-          outline: none;
-          background: none;
-          display: block;
-          width: 100%;
-          padding: 10px 15px;
-          background-color: #ea526f;
-          border-radius: 8px;
-          color: #FFF;
-          font-size: 18px;
-          font-weight: 700;
+          @apply appearance-none border-0 outline-none bg-none w-full bg-red-500 rounded-lg text-white text-lg font-bold py-4 cursor-pointer;
         }
         &:focus-within {
           label {
-            color: #ea526f;
+            @apply text-red-500;
           }
           input[type="text"] {
             background-color: #FFF;
@@ -91,12 +84,9 @@ export default {
     }
   }
   &.chat {
-    flex-direction: column;
+    @apply flex-col;
     header {
-      position: relative;
-      display: block;
-      width: 100%;
-      padding: 50px 30px 10px;
+      @apply relative block w-full pt-12 pb-8 px-2.5;
       .logout {
         position: absolute;
         top: 15px;
