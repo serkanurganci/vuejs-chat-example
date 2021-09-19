@@ -1,51 +1,115 @@
 <template>
-<div class="view login">
-  <form class="login-form" @submit.prevent="Login" v-if="state.username === '' || state.username === null">
-    <h1>Login to Firechat</h1>
-   <div class="form-inner">
-     <label for="usernme">Username</label>
-     <input type="text" v-model="inputUserName" placeholder="Please enter your username..."/>
-     <input type="submit" value="Login">
-   </div>
-  </form>
-</div>
+  <div class="view login" v-if="state.username === '' || state.username === null">
+    <form class="login-form" @submit.prevent="Login">
+      <div class="form-inner">
+        <h1>Login to Chat</h1>
+        <label for="username">Username</label>
+        <input
+          id="username"
+          type="text"
+          v-model="inputUsername"
+          placeholder="Please enter your username..." />
+        <input
+          type="submit"
+          value="Login" />
+      </div>
+    </form>
+  </div>
+
   <div class="view chat" v-else>
-    <h1>Chat View</h1>
+    <header>
+      <button class="logout" @click="Logout">Logout</button>
+      <h1>Welcome, {{ state.username }}</h1>
+    </header>
+
+    <section class="chat-box">
+      <div
+        v-for="message in state.messages"
+        :key="message.key"
+        :class="(message.username == state.username ? 'message current-user' : 'message')">
+        <div class="message-inner">
+          <div class="username">{{ message.username }}</div>
+          <div class="content">{{ message.content }}</div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <form @submit.prevent="SendMessage">
+        <input
+          type="text"
+          v-model="inputMessage"
+          placeholder="Write a message..." />
+        <input
+          type="submit"
+          value="Send" />
+      </form>
+    </footer>
   </div>
 </template>
 
 <script>
-import {reactive, onMounted, ref} from 'vue';
-
+import { reactive, onMounted, ref } from 'vue';
+import db from './db';
 export default {
-  setup() {
-    const inputUserName = ref("")
-
+  setup () {
+    const inputUsername = ref("");
+    const inputMessage = ref("");
     const state = reactive({
-      username:'',
-      message:[]
-    })
-
+      username: "",
+      messages: []
+    });
     const Login = () => {
-      if(inputUserName.value != "" || inputUserName.value != null){
-        state.username = inputUserName.value
-        inputUserName.value = ''
+      if (inputUsername.value != "" || inputUsername.value != null) {
+        state.username = inputUsername.value;
+        inputUsername.value = "";
       }
-      console.log(state)
     }
-
-   return {
-     inputUserName,
-     Login,
-     state
+    const Logout = () => {
+      state.username = "";
+    }
+    const SendMessage = () => {
+      const messagesRef = db.database().ref("messages");
+      if (inputMessage.value === "" || inputMessage.value === null) {
+        return;
+      }
+      const message = {
+        username: state.username,
+        content: inputMessage.value
+      }
+      messagesRef.push(message);
+      inputMessage.value = "";
+    }
+    onMounted(() => {
+      const messagesRef = db.database().ref("messages");
+      messagesRef.on('value', snapshot => {
+        const data = snapshot.val();
+        let messages = [];
+        Object.keys(data).forEach(key => {
+          messages.push({
+            id: key,
+            username: data[key].username,
+            content: data[key].content
+          });
+        });
+        state.messages = messages;
+      });
+    });
+    return {
+      inputUsername,
+      Login,
+      state,
+      inputMessage,
+      SendMessage,
+      Logout
+    }
   }
- },
 }
 </script>
 
 <style lang="scss">
 .view {
-  @apply flex justify-center min-h-screen bg-blue-200;
+  @apply flex justify-center min-h-screen bg-purple-300;
 
   &.login {
     @apply items-center;
@@ -66,17 +130,16 @@ export default {
           }
         }
         input[type="submit"] {
-          @apply appearance-none border-0 outline-none bg-none w-full bg-red-500 rounded-lg text-white text-lg font-bold py-4 cursor-pointer;
+          @apply appearance-none border-0 outline-none bg-none w-full bg-pink-600 rounded-lg text-white text-lg font-bold py-4 cursor-pointer;
         }
         &:focus-within {
           label {
-            @apply text-red-500;
+            @apply text-purple-500;
           }
           input[type="text"] {
-            background-color: #FFF;
-            box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+            @apply bg-white shadow-lg;
             &::placeholder {
-              color: #666;
+              @apply text-gray-200;
             }
           }
         }
@@ -88,109 +151,46 @@ export default {
     header {
       @apply relative block w-full pt-12 pb-8 px-2.5;
       .logout {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        appearance: none;
-        border: none;
-        outline: none;
-        background: none;
-
-        color: #FFF;
-        font-size: 18px;
-        margin-bottom: 10px;
-        text-align: right;
+        @apply absolute top-4 right-4 text-white text-base mb-3 text-right;
       }
       h1 {
-        color: #FFF;
+        @apply text-white;
       }
     }
     .chat-box {
-      border-radius: 24px 24px 0px 0px;
-      background-color: #FFF;
-      box-shadow: 0px 0px 12px rgba(100, 100, 100, 0.2);
-      flex: 1 1 100%;
-      padding: 30px;
+      @apply rounded-t-xl rounded-r-xl bg-white shadow-lg p-8 flex-auto;
       .message {
-        display: flex;
-        margin-bottom: 15px;
-
+        @apply flex mb-4;
         .message-inner {
           .username {
-            color: #888;
-            font-size: 16px;
-            margin-bottom: 5px;
-            padding-left: 15px;
-            padding-right: 15px;
+            @apply text-gray-400;
           }
           .content {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #F3F3F3;
-            border-radius: 999px;
-            color: #333;
-            font-size: 18px;
-            line-height: 1.2em;
-            text-align: left;
+            @apply inline-block py-2.5 px-5 bg-gray-100 rounded-lg text-black text-lg;
           }
         }
         &.current-user {
-          margin-top: 30px;
-          justify-content: flex-end;
-          text-align: right;
+          @apply mt-8 justify-end items-end;
           .message-inner {
-            max-width: 75%;
             .content {
-              color: #FFF;
-              font-weight: 600;
-              background-color: #ea526f;
+              @apply text-white font-semibold bg-purple-600;
             }
           }
         }
       }
     }
     footer {
-      position: sticky;
-      bottom: 0px;
-      background-color: #FFF;
-      padding: 30px;
-      box-shadow: 0px 0px 12px rgba(100, 100, 100, 0.2);
+      @apply sticky bottom-0 bg-white p-8 shadow-inner;
       form {
-        display: flex;
+        @apply flex;
         input[type="text"] {
-          flex: 1 1 100%;
-          appearance: none;
-          border: none;
-          outline: none;
-          background: none;
-          display: block;
-          width: 100%;
-          padding: 10px 15px;
-          border-radius: 8px 0px 0px 8px;
-
-          color: #333;
-          font-size: 18px;
-          box-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
-          background-color: #F3F3F3;
-          transition: 0.4s;
+          @apply flex-auto border-0 outline-none bg-none block w-full py-2 px-4 rounded text-black text-lg bg-gray-100 duration-300;
           &::placeholder {
-            color: #888;
-            transition: 0.4s;
+            @apply text-gray-400 duration-300;
           }
         }
-
         input[type="submit"] {
-          appearance: none;
-          border: none;
-          outline: none;
-          background: none;
-          display: block;
-          padding: 10px 15px;
-          border-radius: 0px 8px 8px 0px;
-          background-color: #ea526f;
-          color: #FFF;
-          font-size: 18px;
-          font-weight: 700;
+          @apply border-none outline-none bg-none block p-2 px-4 rounded bg-purple-600 text-white text-lg font-bold;
         }
       }
     }
