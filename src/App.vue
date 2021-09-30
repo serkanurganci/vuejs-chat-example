@@ -114,7 +114,7 @@ export default {
   &.login {
     @apply items-center;
     .login-form {
-      @apply w-6/12;
+      @apply w-10/12 sm:w-6/12;
       .form-inner {
         @apply py-14 px-4 bg-white rounded shadow-2xl;
         h1 {
